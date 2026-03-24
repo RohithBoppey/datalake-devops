@@ -1,0 +1,22 @@
+# Copyright Broadcom, Inc. All Rights Reserved.
+# SPDX-License-Identifier: APACHE-2.0
+### Lifted it off from: https://github.com/bitnami/containers/blob/main/bitnami/spark/docker-compose.yml
+
+services:
+  spark:
+    image: apache/spark:3.5.0
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+
+  spark-worker:
+    image: apache/spark:3.5.0
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
+    depends_on:
+      - spark
+    ports:
+      - "8081:8081"
+
+# if you want more workers, run with the scale command:
+# docker compose up --scale spark-worker=2
