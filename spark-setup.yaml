@@ -9,6 +9,10 @@ services:
     ports:
       - "8080:8080"
       - "7077:7077"
+    volumes:
+      - ./lake-client:/opt/spark/work-dir/lake-client
+      - ./spark-jobs:/opt/spark/work-dir/spark-jobs
+
 
   spark-worker:
     image: apache/spark:3.5.0
@@ -17,6 +21,9 @@ services:
       - spark
     ports:
       - "8081:8081"
+    volumes:
+      - ./lake-client:/opt/spark/work-dir/lake-client
+      - ./spark-jobs:/opt/spark/work-dir/spark-jobs
 
 # if you want more workers, run with the scale command:
 # docker compose up --scale spark-worker=2
