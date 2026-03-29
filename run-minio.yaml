@@ -11,7 +11,7 @@ services:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
     volumes:
-      - minio-data:/data
+      - minio-data:/data  ## volume is a MUST to maintain persistance
     command: server /data --console-address ":9001"
     restart: unless-stopped
 
