@@ -41,9 +41,9 @@ _CATALOGS = {
 
 # Resolve the enviroment variables
 
-DATAENG_S3_URL=os.getenv("DATAENG_S3_URL", "http://minio:9000") 
-DATAENG_S3_ACCESS_KEY=os.getenv("DATAENG_S3_ACCESS_KEY", "minio@")
-DATAENG_S3_SECRET_KEY=os.getenv("DATAENG_S3_SECRET_KEY", "minio123!")
+DATAENG_S3_URL=os.getenv("DATAENG_S3_URL", "http://localhost:9000")
+DATAENG_S3_ACCESS_KEY=os.getenv("DATAENG_S3_ACCESS_KEY", "minio")
+DATAENG_S3_SECRET_KEY=os.getenv("DATAENG_S3_SECRET_KEY", "minio123")
 
 
 def get_spark(format: str = "delta", app_name: str = "LocalLake") -> SparkSession:
