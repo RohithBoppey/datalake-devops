@@ -10,16 +10,29 @@ class DeltaClient(LakeTableClient):
         pass
 
     def write(self, df, table_path, key_cols):
-        # check if the delta table is present 
         spark = df.sparkSession
+
         if DeltaTable.isDeltaTable(spark, table_path):
-            print("Table already present")
-            return 
-        
-        # Creating a new table now
-        deltaTable = df.write.format("delta").mode("overwrite").save(table_path)
-        print(f"Data written into: {table_path} using S3 language")
-        return deltaTable
+            # Table exists — merge (upsert) new data into it
+            target = DeltaTable.forPath(spark, table_path)
+            
+            merge_condition = " AND ".join(
+                [f"target.{col} = source.{col}" for col in key_cols]
+            )
+            
+            (
+                target.alias("target")
+                .merge(df.alias("source"), merge_condition)
+                .whenMatchedUpdateAll()
+                .whenNotMatchedInsertAll()
+                .execute()
+            )
+            
+            print(f"Data merged into: {table_path}")
+        else:
+            # Table does not exist — create it
+            df.write.format("delta").mode("overwrite").save(table_path)
+            print(f"Table created at: {table_path}")
 
     def read(self, spark, table_path):
         try: 
