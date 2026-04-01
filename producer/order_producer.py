@@ -1,26 +1,74 @@
-# Keep creating events in short events until the script is cut off 
+# Keep creating events in short intervals until the script is cut off
+import sys
+import os
 import time
+import json
+import random
+from datetime import datetime, timezone
+
+from kafka import KafkaProducer
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from clients.kafka import KafkaAdmin
+from clients.kafka.config import get_kafka_config
 
 # Related configs
-KAFKA_TOPIC_NAME = "orders"
-ORDER_GENERATION_TIMEOUT = 10
+KAFKA_TOPIC_NAME = os.environ.get("KAFKA_TOPIC", "orders")
+ORDER_GENERATION_TIMEOUT = int(os.environ.get("PRODUCER_INTERVAL_SECONDS", "10"))
+MAX_ORDER_IDS = 200
 
-def create_event():
-    pass
+STATUSES = ["created", "paid", "shipped", "delivered", "cancelled"]
 
-def push_to_kafka_topic(topic_name, event): 
-    pass
+# Track a cycling counter so repeated runs continue cycling through IDs
+_order_counter = 0
+
+
+def create_event() -> dict:
+    """Generate a single random order event, cycling through 200 order IDs."""
+    global _order_counter
+    _order_counter += 1
+    order_id = (_order_counter % MAX_ORDER_IDS) + 1
+
+    return {
+        "order_id": f"ORD-{order_id:04d}",
+        "status": random.choice(STATUSES),
+        "amount": round(random.uniform(100, 999), 2),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def push_to_kafka_topic(producer: KafkaProducer, topic_name: str, event: dict) -> None:
+    """Send a single event to the Kafka topic, keyed by order_id."""
+    key = event["order_id"].encode("utf-8")
+    producer.send(topic_name, key=key, value=event)
+    producer.flush()
+    print(f"  Sent: {event}")
+
 
 if __name__ == "__main__":
-    count = 0
-    
-    
-    # ensure that topic is created / exists
+    config = get_kafka_config()
+    bootstrap = config["bootstrap_servers"]
 
-    while(1): 
-        event = create_event() 
-        push_to_kafka_topic(KAFKA_TOPIC_NAME, event)
-        time.sleep(ORDER_GENERATION_TIMEOUT)
-        count += 1
-    print(count, "events have been pushed to Kafka topic")
-    
+    # Ensure topic exists
+    admin = KafkaAdmin(bootstrap_servers=bootstrap)
+    admin.create_topic(KAFKA_TOPIC_NAME, num_partitions=3)
+    admin.close()
+
+    # Create a KafkaProducer with JSON serialization
+    producer = KafkaProducer(
+        bootstrap_servers=[bootstrap],
+        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+    )
+    print(f"Producer started | topic={KAFKA_TOPIC_NAME} interval={ORDER_GENERATION_TIMEOUT}s")
+
+    count = 0
+    try:
+        while True:
+            event = create_event()
+            push_to_kafka_topic(producer, KAFKA_TOPIC_NAME, event)
+            count += 1
+            time.sleep(ORDER_GENERATION_TIMEOUT)
+    except KeyboardInterrupt:
+        print(f"\nStopped. {count} events pushed to '{KAFKA_TOPIC_NAME}'.")
+    finally:
+        producer.close()
