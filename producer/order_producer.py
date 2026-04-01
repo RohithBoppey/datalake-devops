@@ -13,7 +13,7 @@ from order_generator import generate_order
 
 # Related configs
 KAFKA_TOPIC_NAME = os.environ.get("KAFKA_TOPIC", "orders")
-ORDER_GENERATION_TIMEOUT = int(os.environ.get("PRODUCER_INTERVAL_SECONDS", "5"))
+ORDER_GENERATION_TIMEOUT = int(os.environ.get("PRODUCER_INTERVAL_SECONDS", "1"))
 MAX_ORDER_IDS = 200
 
 # Track a cycling counter so repeated runs continue cycling through IDs
