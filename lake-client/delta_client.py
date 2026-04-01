@@ -41,10 +41,16 @@ class DeltaClient(LakeTableClient):
         except Exception as e:
             print("Error in reading the dataframe - ", e)
     
-    def delete(self, spark, table_path, condition):
-        try: 
-            df = self.read(spark, table_path)
-        except Exception as e: 
+    def delete(self, spark, table_path, condition=None):
+        try:
+            delta_table = self.read(spark, table_path)
+            if condition:
+                delta_table.delete(condition)
+                print(f"Deleted rows matching: {condition}")
+            else:
+                delta_table.delete()
+                print(f"All rows deleted from: {table_path}")
+        except Exception as e:
             print("Error in deleting the given dataframe: ", e)
             return
     
