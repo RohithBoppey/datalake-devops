@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lake-client"))
 from config import get_spark
 from delta_client import DeltaClient
 from base import LakeTableClient
+from order_generator import generate_orders
 
 S3_TABLE_PATH = "s3a://lakehouse/orders"
 KEY_COLS = ["order_id"]
@@ -25,20 +26,6 @@ def get_client() -> LakeTableClient:
         return IcebergClient()
     """
     return DeltaClient()
-
-
-def generate_orders() -> list[dict]:
-    """Generate 20 sample orders."""
-    statuses = ["created", "processing", "shipped", "delivered"]
-    orders = []
-    for i in range(1, 21):
-        orders.append({
-            "order_id": f"ORD-{i:04d}",
-            "status": statuses[i % len(statuses)],
-            "amount": 100 + (i * 37) % 900,
-        })
-    return orders
-
 
 if __name__ == "__main__":
     spark = get_spark()

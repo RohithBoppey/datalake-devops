@@ -108,8 +108,8 @@ Python producer → Kafka topic "orders" → Python consumer → Delta table on 
 
 **2.1 — Add Kafka to Docker Compose**
 - Add Zookeeper and Kafka (Confluent Platform images) to the compose file
-- Expose Kafka on `localhost:9092` for the producer running outside Docker
-- Add Kafka UI (provectuslabs/kafka-ui) on `localhost:8090` — free, open source
+- Expose Kafka on `localhost:29092` for the producer running outside Docker
+- Add Kafka UI (provectuslabs/kafka-ui) on `localhost:8091` — free, open source
 - Configure Kafka with a single broker and set replication factor to 1 for local use
 
 **2.2 — Order event producer**
@@ -129,7 +129,7 @@ Python producer → Kafka topic "orders" → Python consumer → Delta table on 
 - Add a small utility script in `config/` to create the `orders` Kafka topic with appropriate partition count before running the producer
 
 ### Validation Checklist
-- [ ] Kafka UI at `localhost:8090` shows messages flowing on the `orders` topic
+- [ ] Kafka UI at `localhost:8091` shows messages flowing on the `orders` topic
 - [ ] Consumer writes batches to MinIO, files are visible in the MinIO console
 - [ ] Running producer and consumer simultaneously shows the Delta table updating in real time
 - [ ] Because 200 order IDs cycle, the table stays at ~200 rows — confirming upserts work, not just appends
