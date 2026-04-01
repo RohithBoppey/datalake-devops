@@ -25,3 +25,5 @@ kafka-console-consumer \
   --from-beginning \
   --bootstrap-server localhost:9092
 ```
+
+Read the differences b/w the Kafka confluent for python vs Kafka python at here: https://blog.sulyak.info/post/choosing-the-best-kafka-client-for-python/

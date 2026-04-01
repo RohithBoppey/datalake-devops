@@ -3,38 +3,29 @@ import sys
 import os
 import time
 import json
-import random
-from datetime import datetime, timezone
 
 from kafka import KafkaProducer
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from clients.kafka import KafkaAdmin
 from clients.kafka.config import get_kafka_config
+from order_generator import generate_order
 
 # Related configs
 KAFKA_TOPIC_NAME = os.environ.get("KAFKA_TOPIC", "orders")
-ORDER_GENERATION_TIMEOUT = int(os.environ.get("PRODUCER_INTERVAL_SECONDS", "10"))
+ORDER_GENERATION_TIMEOUT = int(os.environ.get("PRODUCER_INTERVAL_SECONDS", "5"))
 MAX_ORDER_IDS = 200
-
-STATUSES = ["created", "paid", "shipped", "delivered", "cancelled"]
 
 # Track a cycling counter so repeated runs continue cycling through IDs
 _order_counter = 0
 
 
 def create_event() -> dict:
-    """Generate a single random order event, cycling through 200 order IDs."""
+    """Generate a single order event, cycling through 200 order IDs."""
     global _order_counter
     _order_counter += 1
-    order_id = (_order_counter % MAX_ORDER_IDS) + 1
-
-    return {
-        "order_id": f"ORD-{order_id:04d}",
-        "status": random.choice(STATUSES),
-        "amount": round(random.uniform(100, 999), 2),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }
+    order_num = (_order_counter % MAX_ORDER_IDS) + 1
+    return generate_order(order_num)
 
 
 def push_to_kafka_topic(producer: KafkaProducer, topic_name: str, event: dict) -> None:

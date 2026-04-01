@@ -6,6 +6,8 @@ from kafka import KafkaConsumer
 
 from .config import get_kafka_config
 
+# Read the differences in here: 
+# https://blog.sulyak.info/post/choosing-the-best-kafka-client-for-python/
 
 class KafkaBatchConsumer:
     """
