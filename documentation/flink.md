@@ -493,3 +493,10 @@ Recovery:
 
 This is why Flink is used in production for financial systems, fraud detection, and other scenarios where losing or duplicating even one event is unacceptable.
 
+
+- Go into the folder using: 
+```
+docker exec -it dataeng_devops-jobmanager-1 bash
+```
+
+- Run the flink job using: 

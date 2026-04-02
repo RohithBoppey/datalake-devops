@@ -1,0 +1,41 @@
+version: '2'
+services:
+  jobmanager:
+    image: flink:1.18.1-java11
+    container_name: dataeng_jobmanager
+    ports:
+      - 8085:8081
+    command: jobmanager
+    environment:
+      ENABLE_BUILT_IN_PLUGINS: flink-s3-fs-hadoop-1.18.1.jar
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 4
+        state.checkpoints.dir: s3a://lakehouse/_checkpoints
+        s3.endpoint: http://minio:9000
+        s3.access-key: minio
+        s3.secret-key: minio123
+        s3.path.style.access: true
+    volumes:
+      - ./flink-jobs/order-stream-job/target:/opt/flink/jobs
+
+  taskmanager:
+    image: flink:1.18.1-java11
+    container_name: dataeng_taskmanager
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      ENABLE_BUILT_IN_PLUGINS: flink-s3-fs-hadoop-1.18.1.jar
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 4
+        s3.endpoint: http://minio:9000
+        s3.access-key: minio
+        s3.secret-key: minio123
+        s3.path.style.access: true
+
+networks:
+  default:
+    name: dataeng
+    external: true
