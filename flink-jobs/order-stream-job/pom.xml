@@ -104,6 +104,13 @@
       <version>2.15.3</version>
     </dependency>
 
+    <!-- Hadoop core (provides Configuration class) -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+
     <!-- Hadoop AWS for S3A filesystem (MinIO access) -->
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -178,7 +185,7 @@
             <configuration>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>com.dataeng.App</mainClass>
+                  <mainClass>com.dataeng.OrderStreamJob</mainClass>
                 </transformer>
               </transformers>
             </configuration>
