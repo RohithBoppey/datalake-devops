@@ -1,3 +1,7 @@
 /**_env
 
 /**.env
+
+# Maven related files
+# contains build files .jar 
+**target 

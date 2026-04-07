@@ -5,10 +5,11 @@
 services:
   spark:
     # image: apache/spark:3.5.0
-    ### Replaced the image with build for our custom Image 
+    ### Replaced the image with build for our custom Image
     build:
       context: .
       dockerfile: ./Dockerfile
+    container_name: dataeng_spark_master
 
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
     ports:
@@ -23,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    container_name: dataeng_spark_worker
 
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
     depends_on:
@@ -35,3 +37,8 @@ services:
 
 # if you want more workers, run with the scale command:
 # docker compose up --scale spark-worker=2
+
+networks:
+  default:
+    name: dataeng
+    external: true
