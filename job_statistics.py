@@ -32,7 +32,10 @@ def print_table_stats(client, spark, table_name, table_path):
 
 if __name__ == "__main__":
     spark = get_spark("delta", app_name="JobStatistics")
+    
+    # 3 clients
     client = DeltaClient()
+    
 
     print_table_stats(client, spark, "Active Orders", ORDERS_PATH)
     print("\n")

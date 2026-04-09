@@ -20,8 +20,12 @@ _PACKAGES = {
         "com.amazonaws:aws-java-sdk-bundle:1.12.262",
     ]),
 
-    # Hudi and Iceberg will be added in Phase 4
-    # "hudi":    "...",
+    "hudi": ",".join([
+        "org.apache.hudi:hudi-spark3.5-bundle_2.12:1.1.1",
+        "org.apache.hadoop:hadoop-aws:3.3.4",
+        "com.amazonaws:aws-java-sdk-bundle:1.12.262",
+    ])
+   
     # "iceberg": "...",
 }
 
@@ -30,6 +34,7 @@ _PACKAGES = {
 # These enable format-specific SQL syntax inside Spark (e.g. DESCRIBE HISTORY for Delta).
 _SQL_EXTENSIONS = {
     "delta": "io.delta.sql.DeltaSparkSessionExtension",
+    "hudi": "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
 }
 
 
@@ -37,6 +42,7 @@ _SQL_EXTENSIONS = {
 # The catalog tells Spark how to resolve table names and metadata.
 _CATALOGS = {
     "delta": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+    "hudi": "org.apache.spark.sql.hudi.catalog.HoodieCatalog"
 }
 
 # Resolve the enviroment variables
@@ -76,7 +82,7 @@ def get_spark(format: str = "delta", app_name: str = "LocalLake") -> SparkSessio
             f"Available formats: {list(_PACKAGES.keys())}"
         )
 
-    return (
+    builder = (
         SparkSession.builder
         .appName(app_name)
 
@@ -127,9 +133,25 @@ def get_spark(format: str = "delta", app_name: str = "LocalLake") -> SparkSessio
 
         # Performance: disable S3A's list v2 API — more compatible with MinIO
         .config("spark.hadoop.fs.s3a.list.version", "1")
-
-        .getOrCreate()
     )
+
+    # --- Hudi-specific: Kryo serialization ---
+    # Hudi's internal objects require Kryo for correct serialization during
+    # shuffles, upserts, and compaction. Delta/Iceberg work fine without it.
+    if format == "hudi":
+        builder = (
+            builder
+            .config(
+                "spark.serializer",
+                "org.apache.spark.serializer.KryoSerializer"
+            )
+            .config(
+                "spark.kryo.registrator",
+                "org.apache.spark.HoodieSparkKryoRegistrar"
+            )
+        )
+
+    return builder.getOrCreate()
 
 if __name__ == "__main__":
     # test function
