@@ -25,10 +25,28 @@ class HudiClient(LakeTableClient):
         print("DF saved successfully")
     
     def get_history(self, spark, table_path):
-        return super().get_history(spark, table_path)
+        return (
+            spark.read.format("hudi")
+            .option("hoodie.datasource.query.type", "incremental")
+            .option("hoodie.datasource.read.begin.instanttime", "0")
+            .load(table_path)
+        )
     
     def delete(self, spark, table_path, condition):
-        return super().delete(spark, table_path, condition)
+        tableName = table_path.split("/")[-1]
+
+        # Read the rows that match the condition — these are the ones to delete
+        df = self.read(spark, table_path).filter(condition)
+
+        hudi_options = {
+            'hoodie.table.name': tableName,
+            'hoodie.datasource.write.operation': 'delete',
+            'hoodie.datasource.write.recordkey.field': 'order_id',
+            'hoodie.datasource.write.precombine.field': 'ts',
+        }
+
+        df.write.format("hudi").options(**hudi_options).mode("append").save(table_path)
+        print(f"Deleted rows matching: {condition}")
 
 if __name__ == "__main__":
     spark = get_spark("hudi")
@@ -60,3 +78,16 @@ if __name__ == "__main__":
 
     print("--- After upsert ---")
     client.read(spark, PATH).show(5)
+
+    # now delete the shipped orders 
+    client.delete(spark, PATH, "status == 'shipped'")
+
+    # now read again 
+    print("--- After delete ---")
+    client.read(spark, PATH).show(5)
+
+    # show all the histories so far
+    print("--- History (all changes since beginning) ---")
+    client.get_history(spark, PATH).show()
+
+    spark.stop() 
