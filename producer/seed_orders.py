@@ -12,23 +12,27 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lake-client"))
 
 from config import get_spark
 from delta_client import DeltaClient
+from hudi_client import HudiClient
 from base import LakeTableClient
 from order_generator import generate_orders
 
-S3_TABLE_PATH = "s3a://lakehouse/orders"
+FORMAT = "hudi"
+S3_TABLE_PATH = f"s3a://lakehouse/{FORMAT}/orders"
 KEY_COLS = ["order_id"]
 
 def get_client() -> LakeTableClient:
     """
     Return the lake client to use.
-    To swap formats later, change only this function:
-        return HudiClient()
-        return IcebergClient()
+    Swap formats by changing FORMAT at the top of this file.
     """
-    return DeltaClient()
+    if FORMAT == "delta":
+        return DeltaClient()
+    if FORMAT == "hudi":
+        return HudiClient()
+    raise ValueError(f"Unknown format: {FORMAT}")
 
 if __name__ == "__main__":
-    spark = get_spark()
+    spark = get_spark(FORMAT)
     client: LakeTableClient = get_client()
 
     # 1. Create a DataFrame with 20 orders
@@ -44,7 +48,7 @@ if __name__ == "__main__":
     # 3. Read back
     print(f"\n--- Reading from {S3_TABLE_PATH} ---")
     read_df = client.read(spark, S3_TABLE_PATH)
-    read_df.toDF().show(20, truncate=False)
+    read_df.show(20, truncate=False)
 
     # 4. Upsert: update existing + insert new orders
     print("\n--- Upserting records ---")
@@ -57,14 +61,14 @@ if __name__ == "__main__":
     client.write(upsert_df, S3_TABLE_PATH, KEY_COLS)
 
     read_df = client.read(spark, S3_TABLE_PATH)
-    read_df.toDF().show(25, truncate=False)
+    read_df.show(25, truncate=False)
 
     # 5. Delete some rows
     print("\n--- Deleting cancelled orders ---")
     client.delete(spark, S3_TABLE_PATH, "status = 'cancelled'")
 
     read_df = client.read(spark, S3_TABLE_PATH)
-    read_df.toDF().show(25, truncate=False)
+    read_df.show(25, truncate=False)
 
     # 6. Check history
     print(f"\n--- Transaction history for {S3_TABLE_PATH} ---")

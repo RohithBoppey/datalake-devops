@@ -35,15 +35,14 @@ class DeltaClient(LakeTableClient):
             print(f"Table created at: {table_path}")
 
     def read(self, spark, table_path):
-        try: 
-            df = DeltaTable.forPath(spark, table_path)
-            return df
+        try:
+            return DeltaTable.forPath(spark, table_path).toDF()
         except Exception as e:
             print("Error in reading the dataframe - ", e)
-    
+
     def delete(self, spark, table_path, condition=None):
         try:
-            delta_table = self.read(spark, table_path)
+            delta_table = DeltaTable.forPath(spark, table_path)
             if condition:
                 delta_table.delete(condition)
                 print(f"Deleted rows matching: {condition}")
@@ -53,19 +52,19 @@ class DeltaClient(LakeTableClient):
         except Exception as e:
             print("Error in deleting the given dataframe: ", e)
             return
-    
+
     def get_history(self, spark, table_path):
-        try: 
-            # only history is present for a delta table 
-            if not DeltaTable.isDeltaTable(spark, table_path): 
+        try:
+            # only history is present for a delta table
+            if not DeltaTable.isDeltaTable(spark, table_path):
                 raise RuntimeError("history only exists for a delta table")
 
             # now is a delta table which must have history
-            delta_table = self.read(spark, table_path)
+            delta_table = DeltaTable.forPath(spark, table_path)
             history_df = delta_table.history(limit=100)
             return history_df
 
-        except Exception as e: 
+        except Exception as e:
             print("Error in retrieving history: ", e)
     
 if __name__ == "__main__":

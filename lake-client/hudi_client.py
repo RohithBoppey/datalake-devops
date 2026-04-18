@@ -18,7 +18,7 @@ class HudiClient(LakeTableClient):
             'hoodie.table.name': tableName,
             'hoodie.datasource.write.recordkey.field': key_cols[0],
             # 'hoodie.datasource.write.partitionpath.field': 'status',
-            'hoodie.datasource.write.precombine.field': 'ts',
+            'hoodie.datasource.write.precombine.field': 'updated_at',
         }
 
         df.write.format("hudi").options(**hudi_options).mode("append").save(table_path)
@@ -42,7 +42,7 @@ class HudiClient(LakeTableClient):
             'hoodie.table.name': tableName,
             'hoodie.datasource.write.operation': 'delete',
             'hoodie.datasource.write.recordkey.field': 'order_id',
-            'hoodie.datasource.write.precombine.field': 'ts',
+            'hoodie.datasource.write.precombine.field': 'updated_at',
         }
 
         df.write.format("hudi").options(**hudi_options).mode("append").save(table_path)
@@ -56,9 +56,9 @@ if __name__ == "__main__":
 
     # --- Step 1: Initial write (creates the Hudi table) ---
     data = [
-        {"order_id": "ORD-0001", "status": "created", "amount": 450, "ts": 1},
-        {"order_id": "ORD-0002", "status": "created", "amount": 230, "ts": 1},
-        {"order_id": "ORD-0003", "status": "created", "amount": 200, "ts": 1},
+        {"order_id": "ORD-0001", "status": "created", "amount": 450, "updated_at": "2026-04-18T10:00:00+00:00"},
+        {"order_id": "ORD-0002", "status": "created", "amount": 230, "updated_at": "2026-04-18T10:00:00+00:00"},
+        {"order_id": "ORD-0003", "status": "created", "amount": 200, "updated_at": "2026-04-18T10:00:00+00:00"},
     ]
 
     df = spark.createDataFrame(data)
@@ -69,8 +69,8 @@ if __name__ == "__main__":
 
     # --- Step 2: Upsert (update ORD-0001 + insert ORD-0004) ---
     upsert_data = [
-        {"order_id": "ORD-0001", "status": "shipped", "amount": 450, "ts": 2},
-        {"order_id": "ORD-0004", "status": "created", "amount": 999, "ts": 1},
+        {"order_id": "ORD-0001", "status": "shipped", "amount": 450, "updated_at": "2026-04-18T11:00:00+00:00"},
+        {"order_id": "ORD-0004", "status": "created", "amount": 999, "updated_at": "2026-04-18T10:00:00+00:00"},
     ]
 
     upsert_df = spark.createDataFrame(upsert_data)
